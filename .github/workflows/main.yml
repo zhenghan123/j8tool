@@ -1,15 +1,25 @@
-   name: My Workflow
+name: Run JS script
 
-   on: [push, pull_request]
+on:
+ push:
+   branches: [ main ]
+ pull_request:
+   branches: [ main ]
 
-   jobs:
-     myJob:
-       runs-on: ubuntu-latest
+jobs:
+ build:
+   runs-on: ubuntu-latest
 
-       steps:
-       - name: Check out code
-         uses: actions/checkout@v2
+   steps:
+   - name: Check out code
+     uses: actions/checkout@v2
 
-       - name: Run a script
-         run: |
-           echo "Hello, world!"
+   - name: Setup Node.js environment
+     uses: actions/setup-node@v1
+     with:
+       node-version: '14'
+
+   - name: Run script
+     run: |
+       cd hbooker
+       node getChest.js

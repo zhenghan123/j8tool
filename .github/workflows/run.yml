@@ -21,7 +21,8 @@ jobs:
         node-version: 14 
 
     - name: Install dependencies
-      run: npm install
+      run: npm install crypto-js
+      # run: npm install
 
     - name: Run script
       run: node ./hbooker/getChest.js

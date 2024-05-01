@@ -1,7 +1,7 @@
 name: Run JS Script
 on:
   schedule:
-    - cron: '10 6 * * *'  # 这会每分钟运行一次，你需要根据你的需求修改这个 cron 语句
+    - cron: '* * * * *'  # 这会每分钟运行一次，你需要根据你的需求修改这个 cron 语句
   workflow_dispatch:  # 允许手动触发
 # on:
 #   push:

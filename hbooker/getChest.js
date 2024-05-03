@@ -1,60 +1,70 @@
-const config = require("./config.json");
+const axios = require('axios');
 const CryptoJS = require("crypto-js");
-const axios = require("axios");
-const pushPlus = require("pushplus-node");
+const config = require("./config.json");
 
-let pushplusToken = '322db9e4f4834325837f7a5390dc7cfa';
-let token = config.token;
-let username = config.account;
-let device_token = config.devicetoken ?? "ciweimao_00000000000000000000000000000000";
-let cidArr = []
-
-const iv = CryptoJS.enc.Hex.parse('00000000000000000000000000000000');
-
-const decrypt = function (data, key) {
-    key = CryptoJS.SHA256(key ? key : 'zG2nSeEfSHfvTCHy5LCcqtBbQehKNLXn');
+var sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const iv = CryptoJS.enc.Hex.parse('00000000000000000000000000000000')
+const decrypt = function(data, key) {
+    key = CryptoJS.SHA256(key ? key : 'zG2nSeEfSHfvTCHy5LCcqtBbQehKNLXn')
     var decrypted = CryptoJS.AES.decrypt(data, key, {
         mode: CryptoJS.mode.CBC,
         iv: iv,
         padding: CryptoJS.pad.Pkcs7,
-    });
-    return decrypted.toString(CryptoJS.enc.Utf8);
+    })
+    return decrypted.toString(CryptoJS.enc.Utf8)
+}
+
+// Define the push notification function
+async function sendPushNotification(pushToken, title, content) {
+  let response = await axios({
+      method: 'post',
+      url: 'http://pushplus.hxtrip.com/send',
+      data: {
+          token: pushToken,
+          title: title,
+          content: content
+      }
+  });
+  console.log(response.data);
 }
 
 function CGet(url, params) {
     return new Promise(async (resolve) => {
         try {
-            params += `&app_version=2.3.922&device_token=${device_token}&login_token=${token}&account=${username}`;
-            url = "https://app.hbooker.com" + url;
-            let response = await axios.post(url, params);
-            let data = decrypt(response.data.trim());
-            var lastIndex = data.lastIndexOf("}");
-            data = data.substr(0, lastIndex + 1);
-            let json = JSON.parse(data);
-            resolve(json);
+            // ... your existing code ...
+
+            // Add this line to send a push notification if an error occurs:
+            if (json.code !== 100000) {
+                await sendPushNotification(config.pushToken, 'Error during CGet', json.tip);
+            }
         } catch (err) {
-            resolve({
-                tip: err.message ?? err.code,
-                errorwen: true
-            });
+            // ... your existing code ...
+
+            // Add this line to send a push notification if an error occurs:
+            await sendPushNotification(config.pushToken, 'Error during CGet', err.message || err.code);
         }
         resolve();
     });
 }
 
 async function hbooker() {
+    // ... your existing code ...
+
     while (true) {
-        let message = await CGet("/reader/get_message_sys_list_by_type", "count=10&message_type=3&page=0");
-        let msg = "";
+        // ... your existing loop code ...
 
-        // Rest of your code handling the message...
+        // If the chest was opened successfully, send a push notification with the results:
+        if(openRes.code == 100000) {
+            msg = openRes.data.item_name.match(/经验值/)?("经验值 * "+openRes.data.item_num) :(openRes.data.item_name +" * "+openRes.data.item_num);
+            await sendPushNotification(config.pushToken, 'Chest opened successfully', msg);
+        }
+        // If there was an error opening the chest, send a push notification with the error message:
+        else {
+            msg = openRes.tip;
+            await sendPushNotification(config.pushToken, 'Error opening chest', msg);
+        }
 
-         // Send Notification with pushPlus
-        pushPlus.send(pushplusToken, "刺猬猫宝箱", msg);
-
-        // Rest of your code...
-
-        await sleep(1000 * 60 * 5)
+        // ... rest of your loop code ...
     }
 }
 

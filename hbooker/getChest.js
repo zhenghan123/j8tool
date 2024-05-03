@@ -1,6 +1,7 @@
 const axios = require("axios");
 const CryptoJS = require("crypto-js");
 const config = require("./config.json");
+const sendmsg = require('./sendmsg.js');
 
 var sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const iv = CryptoJS.enc.Hex.parse('00000000000000000000000000000000')
@@ -36,7 +37,7 @@ function CGet(url, params) {
 }
 
 async function hbooker() {
-    let msg = ""
+    let cidArr = [];
     while (true) {
         const message = await CGet("/reader/get_message_sys_list_by_type", "count=10&message_type=3&page=0")
         if (message && message.data && message.data.message_sys_list) {
@@ -56,19 +57,24 @@ async function hbooker() {
                             await sleep(1000)
                             if (!openRes.errorwen) errorwen = false
                         }  
+                        let msg;
                         if(openRes.code == 100000) 
-                            msg = openRes.data.item_name.match(/经验值/)?("经验值 * "+openRes.data.item_num) :(openRes.data.item_name +" * "+openRes.data.item_num      )                           
+                            msg = openRes.data.item_name.match(/经验值/)?("经验值 * "+openRes.data.item_num) :(openRes.data.item_name +" * "+openRes.data.item_num)
+                        
                         else 
                             msg = openRes.tip
+
+                        // 通过pushplus推送成功信息
+                        await sendmsg(msg);
                         await CGet("/bookshelf/delete_shelf_book", "shelf_id=&book_id=" + bid)
                     } else {
-                        cidArr.push(cid)
+                        cidArr.push(cid);
                     }
-                } 
+                }
             }
         }
         await sleep(1000 * 60 * 5)
     }
 }
 
-hbooker()
+hbooker();

@@ -1,7 +1,7 @@
 const axios = require("axios");
 const CryptoJS = require("crypto-js");
 const config = require("./config.json");
-const sendmsg = require('../sendmsg.js');
+const sendmsg = require('./sendmsg.js');
 
 var sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const iv = CryptoJS.enc.Hex.parse('00000000000000000000000000000000')

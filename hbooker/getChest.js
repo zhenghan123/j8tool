@@ -3,69 +3,59 @@ const CryptoJS = require("crypto-js");
 const config = require("./config.json");
 
 var sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-const iv = CryptoJS.enc.Hex.parse('00000000000000000000000000000000')
-const decrypt = function(data, key) {
-    key = CryptoJS.SHA256(key ? key : 'zG2nSeEfSHfvTCHy5LCcqtBbQehKNLXn')
-    var decrypted = CryptoJS.AES.decrypt(data, key, {
-        mode: CryptoJS.mode.CBC,
-        iv: iv,
-        padding: CryptoJS.pad.Pkcs7,
-    })
-    return decrypted.toString(CryptoJS.enc.Utf8)
-}
+// ...你的其它代码...
 
-// Define the push notification function
-async function sendPushNotification(pushToken, title, content) {
+async function sendPushNotification(token, title, content) {
   let response = await axios({
       method: 'post',
       url: 'http://pushplus.hxtrip.com/send',
       data: {
-          token: pushToken,
+          token: token,
           title: title,
           content: content
       }
   });
+
   console.log(response.data);
 }
 
-function CGet(url, params) {
-    return new Promise(async (resolve) => {
-        try {
-            // ... your existing code ...
-
-            // Add this line to send a push notification if an error occurs:
-            if (json.code !== 100000) {
-                await sendPushNotification(config.pushToken, 'Error during CGet', json.tip);
-            }
-        } catch (err) {
-            // ... your existing code ...
-
-            // Add this line to send a push notification if an error occurs:
-            await sendPushNotification(config.pushToken, 'Error during CGet', err.message || err.code);
-        }
-        resolve();
-    });
-}
+// ...你的其它代码...
 
 async function hbooker() {
-    // ... your existing code ...
+    let result = "【刺猬猫小说】：";
+    let msg = "" ;
 
+    // Inside your while loop:
     while (true) {
-        // ... your existing loop code ...
+        let listData = await CGet("/chest/list_chest", `book_id=${bid}`);
+        let waittime2 = listData.error ? 30000 : (listData.data[0].left_time + 60);
+        let answer = await CGet("/reply/comment/add", `comment_id=${cid}&book_id=${bid}&shelf_id=&content=上`);
 
-        // If the chest was opened successfully, send a push notification with the results:
-        if(openRes.code == 100000) {
-            msg = openRes.data.item_name.match(/经验值/)?("经验值 * "+openRes.data.item_num) :(openRes.data.item_name +" * "+openRes.data.item_num);
-            await sendPushNotification(config.pushToken, 'Chest opened successfully', msg);
-        }
-        // If there was an error opening the chest, send a push notification with the error message:
-        else {
-            msg = openRes.tip;
-            await sendPushNotification(config.pushToken, 'Error opening chest', msg);
-        }
+        if(answer.code == 100000) {
+            let openRes;
 
-        // ... rest of your loop code ...
+            if(answer.data.bonus_switch) {
+                console.log(">>去开宝箱");
+                openRes = await CGet("/chest/open_chest", `chest_id=${cid}`);
+            }
+
+            // If the chest was opened successfully, send a push notification with the results:
+            if(openRes && openRes.code == 100000) {
+                msg = openRes.data.item_name.match(/经验值/)?("经验值 * "+openRes.data.item_num) :(openRes.data.item_name +" * "+openRes.data.item_num);
+                await sendPushNotification(config.token, 'Chest opened successfully', msg);
+            }
+
+            console.log(">>>>结果：" + msg);
+
+            if(errorwen) {
+                await CGet("/bookshelf/favor", "shelf_id=&book_id=" + bid);
+                await sleep(1000);
+                if (!openRes.error) errorwen = false;
+            }
+            // 你的while循环的代码...
+        }
     }
 }
 
 hbooker();
+//module.exports = hbooker()
